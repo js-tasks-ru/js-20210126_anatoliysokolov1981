@@ -1,9 +1,17 @@
 export default class ColumnChart {
   constructor(options) {
-    this.data = options.data || [];
-    this.label = options.label || '';
-    this.value = options.value || 0;
-    this.link = options.link || '';
+    if (!options) {
+      this.data = [];
+      this.label = '';
+      this.value = 0;
+      this.link = '';
+    } else {
+      this.data = options.data || [];
+      this.label = options.label || '';
+      this.value = options.value || 0;
+      this.link = options.link || '';
+    }
+
     this.chartHeight = 50;
     this.render();
   }
