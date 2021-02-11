@@ -11,10 +11,10 @@ export default class ColumnChart {
   }
 
   createChart(data) {
-    const maxValue = Math.max(...this.data);
+    const maxValue = Math.max(...data);
     const scale = this.chartHeight / maxValue;
 
-    return this.data
+    return data
       .map(item => {
         const percent = (item / maxValue * 100).toFixed(0);
 
