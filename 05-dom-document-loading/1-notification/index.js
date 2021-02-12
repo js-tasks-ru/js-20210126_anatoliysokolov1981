@@ -2,7 +2,7 @@ export default class NotificationMessage {
   static element = null;
   static timerId = null;
 
-  constructor(message = '', {duration = 2000, type = 'success'} = {}) {
+  constructor(message = '', {duration = 0, type = ''} = {}) {
     this.message = message;
     this.duration = duration;
     this.type = type;
@@ -28,22 +28,19 @@ export default class NotificationMessage {
       clearTimeout(NotificationMessage.timerId);
     }
 
-    NotificationMessage.element = document.createElement('div');
-    NotificationMessage.element.innerHTML = this.template;
-    NotificationMessage.element = NotificationMessage.element.firstElementChild;
-    document.body.append(NotificationMessage.element);
+    const element = document.createElement('div');
+
+    element.innerHTML = this.template;
+    this.element = element.firstElementChild;
+    NotificationMessage.element = this.element;
+    document.body.append(this.element);
 
     NotificationMessage.timerId = setTimeout(() => {
       this.destroy();
     }, this.duration);
   }
 
-  // remove() {
-  //   NotificationMessage.element.remove();
-  // }
-
   destroy() {
     NotificationMessage.element.remove();
   }
 }
-
