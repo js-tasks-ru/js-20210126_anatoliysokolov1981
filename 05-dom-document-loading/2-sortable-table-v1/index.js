@@ -1,57 +1,70 @@
 export default class SortableTable {
-  subElements = {}
-
-  constructor(header = [], {data = []}) {
+  constructor(header = [], {data = []} = {}) {
     this.header = header;
     this.data = data;
+    this.subElements = {};
 
     this.render();
   }
 
-  createHeader() {
-    return this.header
-      .map(item => {
-        return `
-          <div class="sortable-table__cell" data-id="${item.id}" data-sortable="${item.sortable}" data-order="asc">
-            <span>${item.title}</span>
-          </div>
-        `;
-      })
-      .join('');
+  getHeaderArrowTemplate() {
+    return `
+      <span data-element="arrow" class="sortable-table__sort-arrow">
+        <span class="sort-arrow"></span>
+      </span>
+    `;
   }
 
-  createBody(data) {
+  getHeaderRowTemplate({id, title, sortable}) {
+    return `
+      <div class="sortable-table__cell" data-id="${id}" data-sortable="${sortable}">
+        <span>${title}</span>
+        ${this.getHeaderArrowTemplate()}
+      </div>
+    `;
+  }
+
+  createHeader() {
+    return `
+      <div data-element="header" class="sortable-table__header sortable-table__row">
+        ${this.header.map(item => this.getHeaderRowTemplate(item)).join('')}
+      </div>
+    `;
+  }
+
+  getBodyRowTemplate(data) {
     return data
       .map(item => {
         return `
-          <a href="#" class="sortable-table__row">
-            <div class="sortable-table__cell">
-              <img class="sortable-table-image" alt="${item.title}" src="${item.images[0].url}">
-            </div>
-            <div class="sortable-table__cell">${item.title}</div>
-
-            <div class="sortable-table__cell">${item.quantity}</div>
-            <div class="sortable-table__cell">${item.price}</div>
-            <div class="sortable-table__cell">${item.sales}</div>
+          <a href="/products/${item.id}" class="sortable-table__row">
+            ${this.getCellTemplate(item)}
           </a>
         `;
       })
       .join('');
   }
 
+  getCellTemplate(item) {
+    return this.header
+      .map(({id, template}) =>
+        template ? template(item[id]) : `<div class="sortable-table__cell">${item[id]}</div>`)
+      .join('');
+  }
+
+  createBody() {
+    return `
+      <div data-element="body" class="sortable-table__body">
+        ${this.getBodyRowTemplate(this.data)}
+      </div>
+    `;
+  }
+
   get template() {
     return `
       <div data-element="productsContainer" class="products-list__container">
         <div class="sortable-table">
-
-          <div data-element="header" class="sortable-table__header sortable-table__row">
-            ${this.createHeader()}
-          </div>
-
-          <div data-element="body" class="sortable-table__body">
-            ${this.createBody(this.data)}
-          </div>
-
+          ${this.createHeader()}
+          ${this.createBody()}
         </div>
       </div>
     `;
@@ -75,26 +88,41 @@ export default class SortableTable {
     }, {});
   }
 
-  update(data) {
-    this.subElements.body.innerHTML = this.createBody(data);
+  makeSort(field, order) {
+    const arr = [...this.data];
+    const {sortType} = this.header.find(item => item.id === field);
+    const direction = order === 'asc' ? 1 : -1;
+
+    return arr.sort( (a, b) => {
+      switch (sortType) {
+        case 'string':
+          return direction * a[field].localeCompare(b[field], ['ru', 'en'], {caseFirst: 'upper'});
+        case 'number':
+          return direction * (a[field] - b[field]);
+        default:
+          return direction * (a[field] - b[field]);
+      }
+    });
   }
 
+  setOrderAttributes(field, order) {
+    const allColumns = this.subElements.header.querySelectorAll('.sortable-table__cell[data-id]');
+    const currentColumn = this.subElements.header.querySelector(`.sortable-table__cell[data-id="${field}"]`);
+
+    allColumns.forEach(column => column.dataset.order = '');
+    currentColumn.dataset.order = order;
+  }
+
+
   sort(field, order) {
-    const sortType = field === 'title' ? 'string' : 'number';
+    const sortedData = this.makeSort(field, order);
 
-    const sortNumbers = (data, direction = 1, field) =>
-      data.sort( (a, b) => direction * (a[field] - b[field]) );
-    const compareString = (str1, str2) =>
-      str1.localeCompare(str2, ['ru', 'en'], {caseFirst: 'upper'});
-    const sortStrings = (data, direction = 1, field) =>
-      data.sort( (a, b) => direction * compareString(a[field], b[field]) );
+    this.setOrderAttributes(field, order);
+    this.update(sortedData);
+  }
 
-    if (order === 'asc' && sortType === 'string') sortStrings(this.data, 1, field);
-    if (order === 'desc' && sortType === 'string') sortStrings(this.data, -1, field);
-    if (order === 'asc' && sortType === 'number') sortNumbers(this.data, 1, field);
-    if (order === 'desc' && sortType === 'number') sortNumbers(this.data, -1, field);
-
-    this.update(this.data);
+  update(data) {
+    this.subElements.body.innerHTML = this.getBodyRowTemplate(data);
   }
 
   remove() {
@@ -103,7 +131,6 @@ export default class SortableTable {
 
   destroy() {
     this.remove();
-    this.element = null;
     this.subElements = {};
   }
 }
