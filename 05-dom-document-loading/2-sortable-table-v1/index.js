@@ -1,7 +1,7 @@
 export default class SortableTable {
   subElements = {}
 
-  constructor(header = [], data = {}) {
+  constructor(header = [], {data = []}) {
     this.header = header;
     this.data = data;
 
@@ -20,7 +20,7 @@ export default class SortableTable {
       .join('');
   }
 
-  createBody({data = []}) {
+  createBody(data) {
     return data
       .map( ({images, title, quantity, price, sales})=> {
         return `
@@ -73,6 +73,28 @@ export default class SortableTable {
 
       return acc;
     }, {});
+  }
+
+  update(data) {
+    this.subElements.body.innerHTML = this.createBody(data);
+  }
+
+  sort(field, order) {
+    const sortType = field === 'title' ? 'string' : 'number';
+
+    const sortNumbers = (data, direction = 1, field) =>
+      data.sort( (a, b) => direction * (a[field] - b[field]) );
+    const compareString = (str1, str2) =>
+      str1.localeCompare(str2, ['ru', 'en'], {caseFirst: 'upper'});
+    const sortStrings = (data, direction = 1, field) =>
+      data.sort( (a, b) => direction * compareString(a[field], b[field]) );
+
+    if (order === 'asc' && sortType === 'string') sortStrings(this.data, 1, field);
+    if (order === 'desc' && sortType === 'string') sortStrings(this.data, -1, field);
+    if (order === 'asc' && sortType === 'number') sortNumbers(this.data, 1, field);
+    if (order === 'desc' && sortType === 'number') sortNumbers(this.data, -1, field);
+
+    this.update(this.data);
   }
 
   remove() {
