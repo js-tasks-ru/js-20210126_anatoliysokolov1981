@@ -10,10 +10,10 @@ export default class SortableTable {
 
   createHeader() {
     return this.header
-      .map( ({id, title, sortable}) => {
+      .map(item => {
         return `
-          <div class="sortable-table__cell" data-id="${id}" data-sortable="${sortable}" data-order="asc">
-            <span>${title}</span>
+          <div class="sortable-table__cell" data-id="${item.id}" data-sortable="${item.sortable}" data-order="asc">
+            <span>${item.title}</span>
           </div>
         `;
       })
@@ -22,17 +22,17 @@ export default class SortableTable {
 
   createBody(data) {
     return data
-      .map( ({images, title, quantity, price, sales})=> {
+      .map(item => {
         return `
           <a href="#" class="sortable-table__row">
             <div class="sortable-table__cell">
-              <img class="sortable-table-image" alt="${title}" src="${images[0].url}">
+              <img class="sortable-table-image" alt="${item.title}" src="${item.images[0].url}">
             </div>
-            <div class="sortable-table__cell">${title}</div>
+            <div class="sortable-table__cell">${item.title}</div>
 
-            <div class="sortable-table__cell">${quantity}</div>
-            <div class="sortable-table__cell">${price}</div>
-            <div class="sortable-table__cell">${sales}</div>
+            <div class="sortable-table__cell">${item.quantity}</div>
+            <div class="sortable-table__cell">${item.price}</div>
+            <div class="sortable-table__cell">${item.sales}</div>
           </a>
         `;
       })
