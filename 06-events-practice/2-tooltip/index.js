@@ -17,6 +17,7 @@ class Tooltip {
     element.innerHTML = content;
     element.classList.add('tooltip');
     this.element = element;
+    document.body.append(this.element);
   }
 
   onMouseMove(event) {
@@ -32,7 +33,6 @@ class Tooltip {
     if (!this.active) {
       this.render(content);
       this.active = true;
-      document.body.append(this.element);
       document.addEventListener('mousemove', this.onMouseMove.bind(this));
     }
 
