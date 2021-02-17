@@ -1,27 +1,48 @@
 export default class SortableTable {
+  element;
+  subElements = {};
+
+  onPointerdown = event => {
+    const columnHeader = event.target.closest('.sortable-table__cell');
+    let {id: field, order, sortable} = columnHeader.dataset;
+
+    if (sortable === 'false') return;
+
+    const orderToggle = {
+      asc: 'desc',
+      desc: 'asc'
+    }
+
+    this.sort(field, orderToggle[order]);
+    columnHeader.dataset.order = orderToggle[order];
+    columnHeader.append(this.subElements.arrow);
+  }
+
   constructor(header = [], {data = []} = {}) {
     this.header = header;
     this.data = data;
-    this.subElements = {};
+    this.firstSortedColumn = header.find(item => item.sortable).id;
 
     this.render();
-    this.sort('title', 'asc');
+    this.sort(this.firstSortedColumn, 'asc');
     this.addListener();
   }
 
-  getHeaderArrowTemplate() {
-    return `
+  getHeaderArrowTemplate(id) {
+    const template = `
       <span data-element="arrow" class="sortable-table__sort-arrow">
         <span class="sort-arrow"></span>
       </span>
     `;
+
+    return id === this.firstSortedColumn ? template : '';
   }
 
   getHeaderRowTemplate({id, title, sortable}) {
     return `
-      <div class="sortable-table__cell" data-id="${id}" data-sortable="${sortable}">
+      <div class="sortable-table__cell" data-id="${id}" data-sortable="${sortable}" ${sortable ? 'data-order="asc"' : ''}>
         <span>${title}</span>
-        ${this.getHeaderArrowTemplate()}
+        ${this.getHeaderArrowTemplate(id)}
       </div>
     `;
   }
@@ -107,33 +128,14 @@ export default class SortableTable {
     });
   }
 
-  setOrderAttributes(field, order) {
-    const allColumns = this.subElements.header.querySelectorAll('.sortable-table__cell[data-id]');
-    const currentColumn = this.subElements.header.querySelector(`.sortable-table__cell[data-id="${field}"]`);
-
-    allColumns.forEach(column => column.dataset.order = '');
-    currentColumn.dataset.order = order;
-  }
-
   sort(field, order) {
     const sortedData = this.makeSort(field, order);
 
-    this.setOrderAttributes(field, order);
     this.update(sortedData);
   }
 
-  onHeaderClick(event) {
-    const columnHeader = event.target.closest('.sortable-table__cell');
-    let {id: field, order, sortable} = columnHeader.dataset;
-
-    if (sortable === 'false') return;
-
-    order = order === 'asc' ? 'desc' : 'asc';
-    this.sort(field, order);
-  }
-
   addListener() {
-    this.subElements.header.addEventListener('click', this.onHeaderClick.bind(this));
+    this.subElements.header.addEventListener('click', this.onPointerdown);
   }
 
   update(data) {
