@@ -1,53 +1,59 @@
 class Tooltip {
-  static instance = null;
+  static instance;
+  element;
 
-  constructor() {
-    if (Tooltip.instance) {
-      return Tooltip.instance;
-    } else {
-      Tooltip.instance = this;
+  onMouseMove = event => {
+    const shift = 10;
+    const bodyBorder = {
+      right: document.body.offsetWidth - this.element.offsetWidth - shift
     }
 
-    this.active = false;
+    let left, top;
+
+    if (event.clientX <= bodyBorder.right) {
+      left = event.clientX + shift
+    } else {
+      left = bodyBorder.right;
+    }
+
+    top = event.clientY + shift;
+
+    this.element.style.left = left + 'px';
+    this.element.style.top = top + 'px';
+  }
+
+  onDocumentPointerover = event => {
+    const element = event.target.closest('[data-tooltip]');
+
+    if (element) {
+      this.render(element.dataset.tooltip);
+      document.addEventListener('mousemove', this.onMouseMove);
+    }
+  }
+
+  onDocumentPointerout = () => {
+    if (this.element) {
+      document.removeEventListener('mousemove', this.onMouseMove);
+      this.element.remove();
+    }
+  }
+
+  constructor() {
+    if (Tooltip.instance) return Tooltip.instance;
+
+    Tooltip.instance = this;
   }
 
   render(content) {
-    const element = document.createElement('div');
-
-    element.innerHTML = content;
-    element.classList.add('tooltip');
-    this.element = element;
+    this.element = document.createElement('div');
+    this.element.innerHTML = content;
+    this.element.classList.add('tooltip');
     document.body.append(this.element);
   }
 
-  onMouseMove(event) {
-    this.element.style.left = event.pageX + 'px';
-    this.element.style.top = event.pageY + 'px';
-  }
-
-  onDocumentPointerover(event) {
-    if (!event.target.dataset.tooltip) return;
-
-    const content = event.target.dataset.tooltip;
-
-    if (!this.active) {
-      this.render(content);
-      this.active = true;
-      document.addEventListener('mousemove', this.onMouseMove.bind(this));
-    }
-
-    if (this.active) this.element.innerHTML = content;
-  }
-
-  onDocumentPointerout(event) {
-    document.removeEventListener('mousemove', this.onMouseMove);
-    if (this.element) this.element.remove();
-    this.active = false;
-  }
-
   initialize() {
-    document.addEventListener('pointerover', this.onDocumentPointerover.bind(this));
-    document.addEventListener('pointerout', this.onDocumentPointerout.bind(this));
+    document.addEventListener('pointerover', this.onDocumentPointerover);
+    document.addEventListener('pointerout', this.onDocumentPointerout);
   }
 
   remove() {
