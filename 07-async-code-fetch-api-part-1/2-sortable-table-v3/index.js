@@ -63,7 +63,7 @@ export default class SortableTable {
 
   constructor(header = [], { url = '', step = 20, start = 0, isSortLocally = false } = {}) {
     this.header = header;
-    this.pathname = url;
+    this.url = new URL(url, BACKEND_URL);
     this.step = step;
     this.queryParams._start = start;
     this.queryParams._end = start + step;
@@ -75,16 +75,13 @@ export default class SortableTable {
   }
 
   async loadData(queryParams = {}) {
-    const url = new URL(this.pathname, BACKEND_URL);
-    const keys = Object.keys(queryParams);
-
-    for (const key of keys) {
-      url.searchParams.set(key, queryParams[key]);
+    for (const key of Object.keys(queryParams)) {
+      this.url.searchParams.set(key, queryParams[key]);
     }
 
     this.element.classList.add('sortable-table_loading');
 
-    const data = await fetchJson(url);
+    const data = await fetchJson(this.url);
 
     this.element.classList.remove('sortable-table_loading');
 
