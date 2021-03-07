@@ -11,7 +11,7 @@ export default class SortableList {
 
     if (!currentItem.classList.contains('sortable-list__item')) return;
 
-    const { top, bottom } = currentItem.getBoundingClientRect();
+    const { top } = currentItem.getBoundingClientRect();
     const { offsetHeight: height } = currentItem;
 
     if (clientY < top + height / 2) {
@@ -36,10 +36,6 @@ export default class SortableList {
     this.element.classList.add('sortable-list');
     this.items.forEach(item => item.classList.add('sortable-list__item'));
     this.element.append(... this.items);
-    this.addListener();
-  }
-
-  addListener() {
     this.element.addEventListener('pointerdown', event => this.onPointerdown(event));
   }
 
@@ -62,7 +58,6 @@ export default class SortableList {
     };
 
     this.draggingItem = item;
-
     this.placeholder = document.createElement('div');
     this.placeholder.classList.add('sortable-list__placeholder');
 
@@ -87,7 +82,7 @@ export default class SortableList {
   }
 
   dragStop() {
-    const placeholderIndex = [... this.element.children].indexOf(this.placeholder);
+    const currnetIndex = [... this.element.children].indexOf(this.placeholder);
 
     this.placeholder.replaceWith(this.draggingItem);
     this.draggingItem.classList.remove('sortable-list__item_dragging');
@@ -102,7 +97,7 @@ export default class SortableList {
         bubbles: true,
         detail: {
           from: this.initialIndex,
-          to: placeholderIndex
+          to: currnetIndex
         }
       }));
     }
