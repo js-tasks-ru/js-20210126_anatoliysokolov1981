@@ -92,7 +92,7 @@ export default class SortableList {
     this.draggingItem.style.height = '';
     this.draggingItem = null;
 
-    if (placeholderIndex !== this.initialIndex) {
+    if (currnetIndex !== this.initialIndex) {
       this.element.dispatchEvent(new CustomEvent('sortable-list-reorder', {
         bubbles: true,
         detail: {
