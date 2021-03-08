@@ -206,14 +206,14 @@ export default class ProductForm {
 
     const formData = new FormData(this.form);
     const method = this.productId ? 'PATCH' : 'POST';
-    const customEvent = this.productId
-      ? new CustomEvent('product-updated', { detail: this.productId})
-      : new CustomEvent('product-saved');
-
-    const responseId = await fetchJson(this.url, {
+    const response = await fetchJson(this.url, {
       method: method,
       body: formData
     });
+
+    const customEvent = this.productId
+      ? new CustomEvent('product-updated', { detail: this.productId })
+      : new CustomEvent('product-saved', { detail: response.id });
 
     this.element.dispatchEvent(customEvent);
   }
