@@ -11,10 +11,6 @@ export default class Page {
   element;
   containers;
   components;
-  dateRange = {
-    from: new Date(new Date() - 30 * 24 * 60 * 60 * 1000),
-    to: new Date()
-  }
 
   get template() {
     return `
@@ -52,35 +48,37 @@ export default class Page {
   }
 
   initComponents() {
-    const rangePicker = new RangePicker({
-      from: this.dateRange.from,
-      to: this.dateRange.to
-    });
+    const dateRange = {
+      from: new Date(new Date() - 30 * 24 * 60 * 60 * 1000),
+      to: new Date()
+    };
+
+    const rangePicker = new RangePicker(dateRange);
 
     const ordersChart = new ColumnChart({
       url: 'api/dashboard/orders',
-      range: this.dateRange,
+      range: dateRange,
       label: 'orders',
       link:'#'
     });
 
     const salesChart = new ColumnChart({
       url: 'api/dashboard/sales',
-      range: this.dateRange,
+      range: dateRange,
       label: 'sales',
       formatHeading: data => `$${data}`
     });
 
     const customersChart = new ColumnChart({
       url: 'api/dashboard/customers',
-      range: this.dateRange,
+      range: dateRange,
       label: 'customers'
     });
 
     const sortableTable = new SortableTable(
       header,
       {
-        url: `api/dashboard/bestsellers?from=${encodeURIComponent(this.dateRange.from)}&to${encodeURIComponent(this.dateRange.to)}`,
+        url: `api/dashboard/bestsellers?from=${encodeURIComponent(dateRange.from)}&to${encodeURIComponent(dateRange.to)}`,
         step: 30,
         start: 1,
         isSortLocally: true
