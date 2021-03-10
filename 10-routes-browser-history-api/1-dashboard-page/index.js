@@ -8,5 +8,136 @@ import fetchJson from './utils/fetch-json.js';
 const BACKEND_URL = 'https://course-js.javascript.ru/';
 
 export default class Page {
+  element;
+  containers;
+  components;
+  dateRange = {
+    from: new Date(new Date() - 30 * 24 * 60 * 60 * 1000),
+    to: new Date()
+  }
 
+  get template() {
+    return `
+      <div class="dashboard full-height flex-column">
+
+        <div class="content__top-panel">
+          <h2 class="page-title">Панель управления</h2>
+        </div>
+
+        <div class="dashboard__charts"></div>
+        <h3 class="block-title">Лидеры продаж</h3>
+
+      </div>
+    `;
+  }
+
+  render() {
+    const wrapper = document.createElement('div');
+
+    wrapper.innerHTML = this.template;
+    this.element = wrapper.firstElementChild;
+    this.containers = {
+      rangePicker: this.element.querySelector('.content__top-panel'),
+      ordersChart: this.element.querySelector('.dashboard__charts'),
+      salesChart: this.element.querySelector('.dashboard__charts'),
+      customersChart: this.element.querySelector('.dashboard__charts'),
+      sortableTable: this.element.querySelector('.dashboard__charts').parentNode
+    }
+
+    this.initComponents();
+    this.renderComponents();
+    this.initEventListeners();
+
+    return this.element;
+  }
+
+  initComponents() {
+    const rangePicker = new RangePicker({
+      from: this.dateRange.from,
+      to: this.dateRange.to
+    });
+
+    const ordersChart = new ColumnChart({
+      url: 'api/dashboard/orders',
+      range: this.dateRange,
+      label: 'orders',
+      link:'#'
+    });
+
+    const salesChart = new ColumnChart({
+      url: 'api/dashboard/sales',
+      range: this.dateRange,
+      label: 'sales',
+      formatHeading: data => `$${data}`
+    });
+
+    const customersChart = new ColumnChart({
+      url: 'api/dashboard/customers',
+      range: this.dateRange,
+      label: 'customers'
+    });
+
+    const sortableTable = new SortableTable(
+      header,
+      {
+        url: `api/dashboard/bestsellers?from=${encodeURIComponent(this.dateRange.from)}&to${encodeURIComponent(this.dateRange.to)}`,
+        step: 30,
+        start: 1,
+        isSortLocally: true
+      }
+    );
+
+    this.components = {
+      rangePicker,
+      ordersChart,
+      salesChart,
+      customersChart,
+      sortableTable
+    };
+  }
+
+  renderComponents() {
+    for (const [key, component] of Object.entries(this.components)) {
+      this.containers[key].append(component.element);
+    }
+  }
+
+  async updateComponents(from, to) {
+    const url = this.components.sortableTable.url;
+
+    url.searchParams.set('from', from);
+    url.searchParams.set('to', to);
+
+    const response = fetchJson(url);
+
+    const [data, ...rest] = await Promise.all([
+      response,
+      this.components.ordersChart.update(from, to),
+      this.components.salesChart.update(from, to),
+      this.components.customersChart.update(from, to)
+    ]);
+
+    this.components.sortableTable.addRows(data);
+    this.components.sortableTable.update(data);
+  }
+
+  initEventListeners() {
+    this.containers.rangePicker.addEventListener('date-select', event => {
+      const { from, to } = event.detail;
+
+      this.updateComponents(from, to);
+    })
+  }
+
+  remove() {
+    this.element.remove();
+  }
+
+  destroy() {
+    this.remove();
+
+    for (const component of Object.values(this.components)) {
+      component.destroy();
+    }
+  }
 }
