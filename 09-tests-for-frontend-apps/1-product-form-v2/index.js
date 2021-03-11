@@ -7,7 +7,7 @@ const BACKEND_URL = 'https://course-js.javascript.ru';
 
 export default class ProductForm {
   element;
-  form;
+  subElements;
 
   constructor (productId) {
     this.productId = productId;
@@ -124,7 +124,7 @@ export default class ProductForm {
     const items = images.map(image => this.getImageElement(image));
     const sortableList = new SortableList({ items });
 
-    this.imageListContainer.append(sortableList.element);
+    this.subElements.imageListContainer.append(sortableList.element);
   }
 
   renderForm() {
@@ -132,8 +132,17 @@ export default class ProductForm {
 
     element.innerHTML = this.template;
     this.element = element.firstElementChild;
-    this.form = this.element.firstElementChild;
-    this.imageListContainer = this.element.querySelector('[data-element = imageListContainer]');
+    this.subElements = this.getSubElements(this.element);
+  }
+
+  getSubElements(element) {
+    const elements = element.querySelectorAll('[data-element]');
+
+    return [...elements].reduce( (acc, subElement) => {
+      acc[subElement.dataset.element] = subElement;
+
+      return acc;
+    }, {});
   }
 
   async render () {
@@ -144,7 +153,7 @@ export default class ProductForm {
     if (categoriesResponse) {
       const options = this.renderOptions(categoriesResponse);
 
-      this.form.subcategory.innerHTML = options;
+      this.subElements.productForm.subcategory.innerHTML = options;
     }
 
     if (productResponse) this.update(...productResponse);
@@ -156,18 +165,25 @@ export default class ProductForm {
     return await fetchJson(this.url);
   }
 
+  setCategory(category) {
+    const select = this.subElements.productForm.subcategory;
+
+    Array.from(select.options).find(option => option.value === category).selected = true;
+  }
+
   update(product = {}) {
-    this.form.title.value = product.title;
-    this.form.description.value = product.description;
-    this.form.price.value = product.price;
-    this.form.discount.value = product.discount;
-    this.form.quantity.value = product.quantity;
-    this.form.status.value = product.status;
+    this.subElements.productForm.title.value = product.title;
+    this.subElements.productForm.description.value = product.description;
+    this.setCategory(product.subcategory);
+    this.subElements.productForm.price.value = product.price;
+    this.subElements.productForm.discount.value = product.discount;
+    this.subElements.productForm.quantity.value = product.quantity;
+    this.subElements.productForm.status.value = product.status;
     this.renderImages(product.images);
   }
 
   upload = async () => {
-    const [file] = this.form.upload.files;
+    const [file] = this.subElements.productForm.upload.files;
     const formData = new FormData();
     const result = {
       source: file.name
@@ -191,20 +207,20 @@ export default class ProductForm {
       const image = this.getImageElement(result);
 
       image.classList.add('sortable-list__item');
-      this.imageListContainer.querySelector('.sortable-list').append(image);
+      this.subElements.imageListContainer.querySelector('.sortable-list').append(image);
     } catch (err) {
       console.error(err);
     }
   }
 
-  onUploadImageClick () {
-    this.form.upload.click();
+  onUploadImageClick = () => {
+    this.subElements.upload.click();
   }
 
   onFormSubmit = async event => {
     event.preventDefault();
 
-    const formData = new FormData(this.form);
+    const formData = new FormData(this.subElements.productForm);
     const method = this.productId ? 'PATCH' : 'POST';
     const response = await fetchJson(this.url, {
       method: method,
@@ -219,9 +235,9 @@ export default class ProductForm {
   }
 
   addListeners() {
-    this.form.upload.addEventListener('change', this.upload);
-    this.form.uploadImage.addEventListener('click', this.onUploadImageClick);
-    this.form.addEventListener('submit', this.onFormSubmit);
+    this.subElements.upload.addEventListener('change', this.upload);
+    this.subElements.productForm.uploadImage.addEventListener('click', this.onUploadImageClick);
+    this.subElements.productForm.addEventListener('submit', this.onFormSubmit);
   }
 
   destroy() {
