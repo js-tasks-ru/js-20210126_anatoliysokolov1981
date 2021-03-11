@@ -106,17 +106,13 @@ export default class Page {
     url.searchParams.set('from', from);
     url.searchParams.set('to', to);
 
-    const response = fetchJson(url);
-
-    const [data, ...rest] = await Promise.all([
-      response,
-      this.components.ordersChart.update(from, to),
-      this.components.salesChart.update(from, to),
-      this.components.customersChart.update(from, to)
-    ]);
+    const data = await fetchJson(url);
 
     this.components.sortableTable.addRows(data);
     this.components.sortableTable.update(data);
+    this.components.ordersChart.update(from, to);
+    this.components.salesChart.update(from, to);
+    this.components.customersChart.update(from, to);
   }
 
   initEventListeners() {
