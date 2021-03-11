@@ -9,7 +9,7 @@ const BACKEND_URL = 'https://course-js.javascript.ru/';
 
 export default class Page {
   element;
-  containers;
+  subElements;
   components;
 
   get template() {
@@ -18,10 +18,16 @@ export default class Page {
 
         <div class="content__top-panel">
           <h2 class="page-title">Панель управления</h2>
+          <div data-element="rangePicker"></div>
         </div>
 
-        <div class="dashboard__charts"></div>
+        <div class="dashboard__charts">
+          <div data-element="ordersChart"></div>
+          <div data-element="salesChart"></div>
+          <div data-element="customersChart"></div>
+        </div>
         <h3 class="block-title">Лидеры продаж</h3>
+        <div data-element="sortableTable"></div>
 
       </div>
     `;
@@ -32,13 +38,7 @@ export default class Page {
 
     wrapper.innerHTML = this.template;
     this.element = wrapper.firstElementChild;
-    this.containers = {
-      rangePicker: this.element.querySelector('.content__top-panel'),
-      ordersChart: this.element.querySelector('.dashboard__charts'),
-      salesChart: this.element.querySelector('.dashboard__charts'),
-      customersChart: this.element.querySelector('.dashboard__charts'),
-      sortableTable: this.element.querySelector('.dashboard__charts').parentNode
-    }
+    this.subElements = this.getSubElements(this.element);
 
     this.initComponents();
     this.renderComponents();
@@ -47,9 +47,19 @@ export default class Page {
     return this.element;
   }
 
+  getSubElements(element) {
+    const elements = element.querySelectorAll('[data-element]');
+
+    return [...elements].reduce((accum, subElement) => {
+      accum[subElement.dataset.element] = subElement;
+
+      return accum;
+    }, {});
+  }
+
   initComponents() {
     const dateRange = {
-      from: new Date(new Date() - 30 * 24 * 60 * 60 * 1000),
+      from: new Date(new Date().setMonth(new Date().getMonth() - 1)),
       to: new Date()
     };
 
@@ -96,7 +106,9 @@ export default class Page {
 
   renderComponents() {
     for (const [key, component] of Object.entries(this.components)) {
-      this.containers[key].append(component.element);
+      const container = this.subElements[key];
+
+      container.append(component.element);
     }
   }
 
@@ -116,7 +128,7 @@ export default class Page {
   }
 
   initEventListeners() {
-    this.containers.rangePicker.addEventListener('date-select', event => {
+    this.subElements.rangePicker.addEventListener('date-select', event => {
       const { from, to } = event.detail;
 
       this.updateComponents(from, to);
