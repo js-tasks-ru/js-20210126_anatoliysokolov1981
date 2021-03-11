@@ -8,10 +8,10 @@ const BACKEND_URL = 'https://course-js.javascript.ru';
 export default class ProductForm {
   element;
   subElements;
+  url = new URL('api/rest/products', BACKEND_URL);
 
   constructor (productId) {
     this.productId = productId;
-    this.url = new URL('api/rest/products', BACKEND_URL);
 
     this.renderForm();
     this.addListeners();
@@ -29,7 +29,7 @@ export default class ProductForm {
           <div class="form-group form-group__wide">
             <label class="form-label">Описание</label>
             <textarea required="" class="form-control" name="description"
-            data-element="productDescription" placeholder="Описание товара"></textarea>
+            data-form="description" placeholder="Описание товара"></textarea>
           </div>
 
           <div class="form-group form-group__wide" data-element="sortable-list-container">
@@ -41,7 +41,7 @@ export default class ProductForm {
 
           <div class="form-group form-group__half_left">
             <label class="form-label">Категория</label>
-            <select class="form-control" name="subcategory">
+            <select data-form="subcategory" class="form-control" name="subcategory">
               <option value="">Категория &gt; Подкатегория</option>
             </select>
           </div>
@@ -53,12 +53,12 @@ export default class ProductForm {
 
           <div class="form-group form-group__part-half">
             <label class="form-label">Количество</label>
-            <input required="" type="number" class="form-control" name="quantity" placeholder="1">
+            <input data-form="quantity" required="" type="number" class="form-control" name="quantity" placeholder="1">
           </div>
 
           <div class="form-group form-group__part-half">
             <label class="form-label">Статус</label>
-            <select class="form-control" name="status">
+            <select data-form="status" class="form-control" name="status">
               <option value="1">Активен</option>
               <option value="0">Неактивен</option>
             </select>
@@ -80,6 +80,7 @@ export default class ProductForm {
       <fieldset>
         <label class="form-label">${productName}</label>
         <input
+          data-form="${name}"
           class="form-control"
           name="${name}"
           type="${type}"
@@ -217,14 +218,37 @@ export default class ProductForm {
     this.subElements.upload.click();
   }
 
+  getFormElementsData() {
+    const data ={};
+    const elements = this.element.querySelectorAll('[data-form]');
+
+    [...elements].forEach(element => data[element.name] = element.value);
+
+    const urls = this.element.querySelectorAll('[name="url"]');
+    const sources = this.element.querySelectorAll('[name="source"]');
+    data.images = [];
+
+    [...urls].forEach((item, i) => {
+      data.images.push({
+        "url": item.value,
+        "source": sources[i].value
+      })
+    });
+
+    if (this.productId) data.id = this.productId;
+
+    return data;
+  }
+
   onFormSubmit = async event => {
     event.preventDefault();
 
-    const formData = new FormData(this.subElements.productForm);
-    const method = this.productId ? 'PATCH' : 'POST';
     const response = await fetchJson(this.url, {
-      method: method,
-      body: formData
+      method: this.productId ? 'PATCH' : 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.getFormElementsData()),
     });
 
     const customEvent = this.productId
@@ -240,7 +264,12 @@ export default class ProductForm {
     this.subElements.productForm.addEventListener('submit', this.onFormSubmit);
   }
 
-  destroy() {
+  remove() {
     this.element.remove();
+  }
+
+  destroy() {
+    this.remove();
+    this.subElements = null;
   }
 }
